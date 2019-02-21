@@ -1,0 +1,15 @@
+{
+    "name": "schedule-visualizer",
+    "version": "1.0.0",
+    "private": true,
+    "devDependencies": {
+        "elm-hot": "^1.0.1",
+        "node-elm-compiler": "^5.0.1",
+        "parcel-bundler": "^1.11.0",
+        "sass": "^1.17.1"
+    },
+    "scripts": {
+        "build": "parcel build ./src/index.html",
+        "dev": "parcel ./src/index.html"
+    }
+}
