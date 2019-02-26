@@ -6,6 +6,7 @@ import Html exposing (Html, div, text, textarea)
 import Html.Attributes exposing (class, style)
 import Html.Events exposing (onInput)
 import Json.Decode as D
+import Parser exposing ((|.), (|=))
 
 
 main : Platform.Program () Model Msg
@@ -34,38 +35,20 @@ init () =
         [
             {
                 "description": "The Foos",
-                "start": {
-                    "hour": 9,
-                    "minute": 30
-                },
-                "end": {
-                    "hour": 11,
-                    "minute": 0
-                },
+                "start": "9:30 AM",
+                "end": "11:00 am",
                 "location": "Baz Hall"
             },
             {
                 "description": "Maria Blumenface",
-                "start": {
-                    "hour": 10,
-                    "minute": 30
-                },
-                "end": {
-                    "hour": 13,
-                    "minute": 0
-                },
+                "start": " 10:30am",
+                "end": "13:00",
                 "location": "The Back Alley"
             },
             {
                 "description": "Joshua Farenghetti",
-                "start": {
-                    "hour": 12,
-                    "minute": 30
-                },
-                "end": {
-                    "hour": 17,
-                    "minute": 0
-                },
+                "start": "12:30 pm",
+                "end": "5pm",
                 "location": "Baz Hall"
             }
         ]
@@ -277,15 +260,67 @@ scheduleDecoder =
 
 entryDecoder : D.Decoder Event
 entryDecoder =
+    let
+        validateEvent event =
+            if minutesFromMidnight event.start > minutesFromMidnight event.end then
+                D.fail "Event cannot end before it starts"
+
+            else
+                D.succeed event
+    in
     D.map4 Event
         (D.field "description" D.string)
         (D.field "start" timeDecoder)
         (D.field "end" timeDecoder)
         (D.field "location" D.string)
+        |> D.andThen validateEvent
 
 
 timeDecoder : D.Decoder Time
 timeDecoder =
-    D.map2 Time
-        (D.field "hour" D.int)
-        (D.field "minute" D.int)
+    let
+        parseTime timeString =
+            case Parser.run timeParser (String.toLower timeString) of
+                Ok time ->
+                    D.succeed time
+
+                Err _ ->
+                    D.fail "Invalid time"
+    in
+    D.string
+        |> D.andThen parseTime
+
+
+timeParser : Parser.Parser Time
+timeParser =
+    Parser.succeed timeFromParsedComponents
+        |. Parser.spaces
+        |= Parser.int
+        |= Parser.oneOf
+            [ Parser.succeed identity
+                |. Parser.symbol ":"
+                |= Parser.oneOf
+                    [ Parser.succeed identity
+                        |. Parser.chompIf (\c -> c == '0')
+                        |= Parser.int
+                    , Parser.int
+                    ]
+            , Parser.succeed 0
+            ]
+        |. Parser.spaces
+        |= Parser.oneOf
+            [ Parser.keyword "pm" |> Parser.map (\_ -> True)
+            , Parser.keyword "am" |> Parser.map (\_ -> False)
+            , Parser.succeed False
+            ]
+        |. Parser.spaces
+        |. Parser.end
+
+
+timeFromParsedComponents : Int -> Int -> Bool -> Time
+timeFromParsedComponents hour minute isPm =
+    if isPm && hour < 12 then
+        { hour = hour + 12, minute = minute }
+
+    else
+        { hour = hour, minute = minute }
