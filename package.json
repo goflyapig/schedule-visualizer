@@ -10,7 +10,8 @@
         "sass": "^1.17.1"
     },
     "scripts": {
-        "build": "parcel build ./src/index.html",
-        "dev": "parcel ./src/index.html"
+        "clean": "node clean.js",
+        "build": "yarn run clean && parcel build ./src/index.html",
+        "dev": "yarn run clean && parcel ./src/index.html"
     }
 }
