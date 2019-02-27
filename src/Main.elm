@@ -2,8 +2,8 @@ module Main exposing (main)
 
 import Browser
 import Dict
-import Html exposing (Html, div, text, textarea)
-import Html.Attributes exposing (class, style)
+import Html exposing (Html, div, h1, text, textarea)
+import Html.Attributes exposing (class, style, title)
 import Html.Events exposing (onInput)
 import Json.Decode as D
 import Parser exposing ((|.), (|=))
@@ -31,28 +31,7 @@ init : () -> ( Model, Cmd msg )
 init () =
     let
         json =
-            """
-        [
-            {
-                "description": "The Foos",
-                "start": "9:30 AM",
-                "end": "11:00 am",
-                "location": "Baz Hall"
-            },
-            {
-                "description": "Maria Blumenface",
-                "start": " 10:30am",
-                "end": "13:00",
-                "location": "The Back Alley"
-            },
-            {
-                "description": "Joshua Farenghetti",
-                "start": "12:30 pm",
-                "end": "5pm",
-                "location": "Baz Hall"
-            }
-        ]
-        """
+            """[{"description":"The Curls","start":"1:00 pm","end":"1:40 pm","location":"Green Stage"},{"description":"Melkbelly","start":"1:45 pm","end":"2:25 pm","location":"Red Stage"},{"description":"Lucy Dacus","start":"2:30 pm","end":"3:15 pm","location":"Green Stage"},{"description":"Julie Byrne","start":"2:45 pm","end":"3:30 pm","location":"Blue Stage"},{"description":"Joshua Abrams & Natural Information Society","start":"3:20 pm","end":"4:10 pm","location":"Red Stage"},{"description":"Open Mike Eagle","start":"4:00 pm","end":"4:45 pm","location":"Blue Stage"},{"description":"Saba","start":"4:15 pm","end":"5:10 pm","location":"Green Stage"},{"description":"Syd","start":"5:15 pm","end":"6:10 pm","location":"Red Stage"},{"description":"Julien Baker","start":"5:15 pm","end":"6:00 pm","location":"Blue Stage"},{"description":"Earl Sweatshirt","start":"6:15 pm","end":"7:15 pm","location":"Green Stage"},{"description":"Big Thief","start":"6:30 pm","end":"7:15 pm","location":"Blue Stage"},{"description":"Courtney Barnett","start":"7:25 pm","end":"8:25 pm","location":"Red Stage"},{"description":"Mount Kimbie","start":"7:45 pm","end":"8:30 pm","location":"Blue Stage"},{"description":"Tame Impala","start":"8:30 pm","end":"9:50 pm","location":"Green Stage"}]"""
     in
     ( json, Cmd.none )
 
@@ -133,7 +112,8 @@ subscriptions _ =
 view : Model -> Html Msg
 view model =
     div [ class "schedule-visualizer" ]
-        [ textarea [ class "json-input", onInput SetJson ] [ text model ]
+        [ h1 [] [ text "Schedule Visualizer" ]
+        , textarea [ class "json-input", onInput SetJson ] [ text model ]
         , viewSchedule model
         ]
 
@@ -162,6 +142,7 @@ viewSchedule model =
                         [ class "event"
                         , style "left" (timeLeftPosition window event.start)
                         , style "width" (timeWidth event.start event.end)
+                        , title event.description
                         ]
                         [ text event.description ]
             in
