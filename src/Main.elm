@@ -56,8 +56,8 @@ type alias LocationGroup =
     }
 
 
-locationGroups : List Event -> List LocationGroup
-locationGroups events =
+eventsToLocationGroups : List Event -> List LocationGroup
+eventsToLocationGroups events =
     let
         addEvent event dict =
             Dict.update event.location (updateGroup event) dict
@@ -112,7 +112,7 @@ subscriptions _ =
 view : Model -> Html Msg
 view model =
     div [ class "schedule-visualizer" ]
-        [ h1 [] [ text "Schedule Visualizer" ]
+        [ h1 [] [ text "Schedule Visualizer Thing" ]
         , textarea [ class "json-input", onInput SetJson ] [ text model ]
         , viewSchedule model
         ]
@@ -126,10 +126,24 @@ viewSchedule model =
                 window =
                     windowForEvents events
 
-                timeHeadings =
+                timeHeadingElements =
                     List.range window.startHour window.endHour
-                        |> List.map (\hour -> { hour = hour, minute = 0 })
-                        |> List.map (viewTimeHeading window)
+                        |> List.concatMap (\hour -> [ { hour = hour, minute = 0 }, { hour = hour, minute = 30 } ])
+                        |> List.map viewTimeHeading
+
+                viewTimeHeading time =
+                    div [ class "time-heading", style "left" (timeLeftPosition window time) ]
+                        [ text
+                            (if time.minute == 0 then
+                                timeToString time
+
+                             else
+                                ""
+                            )
+                        ]
+
+                locationGroupElements =
+                    eventsToLocationGroups events |> List.map viewLocationGroup
 
                 viewLocationGroup locationGroup =
                     div [ class "location-group" ]
@@ -147,10 +161,8 @@ viewSchedule model =
                         [ text event.description ]
             in
             div [ class "schedule" ]
-                [ div [ class "time-headings" ]
-                    timeHeadings
-                , div [ class "location-groups" ]
-                    (locationGroups events |> List.map viewLocationGroup)
+                [ div [ class "time-headings" ] timeHeadingElements
+                , div [ class "location-groups" ] locationGroupElements
                 ]
 
         Err error ->
@@ -167,33 +179,25 @@ windowForEvents : List Event -> Window
 windowForEvents events =
     { startHour =
         events
-            |> List.map (\e -> e.start.hour)
+            |> List.map (\event -> event.start.hour)
             |> List.minimum
             |> Maybe.withDefault 0
     , endHour =
         events
-            |> List.map
-                (\e ->
-                    if e.end.minute == 0 then
-                        e.end.hour
-
-                    else
-                        e.end.hour + 1
-                )
+            |> List.map (\event -> minutesFromMidnight event.end)
+            |> List.map (\minutes -> ceiling (toFloat minutes / 60))
             |> List.maximum
             |> Maybe.withDefault 0
     }
 
 
-viewTimeHeading : Window -> Time -> Html Msg
-viewTimeHeading window time =
-    div [ class "time-heading", style "left" (timeLeftPosition window time) ]
-        [ text (timeToString time) ]
+emPerHour =
+    14
 
 
 minutesWidth : Int -> String
 minutesWidth minutes =
-    String.fromFloat (toFloat minutes / 7) ++ "em"
+    String.fromFloat (toFloat minutes * emPerHour / 60) ++ "em"
 
 
 timeWidth : Time -> Time -> String
