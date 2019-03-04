@@ -271,12 +271,7 @@ timeDecoder =
 
                 Err err ->
                     D.fail
-                        ("Invalid time"
-                         {--
-                            ++ ": "
-                            ++ Debug.toString err
-                         --}
-                        )
+                        "Invalid time"
     in
     D.string
         |> D.andThen parseTime
@@ -308,7 +303,11 @@ intWithLeadingZeroesParser =
     Parser.oneOf
         [ Parser.succeed identity
             |. Parser.chompIf (\c -> c == '0')
-            |= Parser.int
+            |. Parser.chompWhile (\c -> c == '0')
+            |= Parser.oneOf
+                [ Parser.int
+                , Parser.succeed 0
+                ]
         , Parser.int
         ]
 
