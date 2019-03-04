@@ -269,8 +269,14 @@ timeDecoder =
                 Ok time ->
                     D.succeed time
 
-                Err _ ->
-                    D.fail "Invalid time"
+                Err err ->
+                    D.fail
+                        ("Invalid time"
+                         {--
+                            ++ ": "
+                            ++ Debug.toString err
+                         --}
+                        )
     in
     D.string
         |> D.andThen parseTime
@@ -280,16 +286,11 @@ timeParser : Parser.Parser Time
 timeParser =
     Parser.succeed timeFromParsedComponents
         |. Parser.spaces
-        |= Parser.int
+        |= intWithLeadingZeroesParser
         |= Parser.oneOf
             [ Parser.succeed identity
                 |. Parser.symbol ":"
-                |= Parser.oneOf
-                    [ Parser.succeed identity
-                        |. Parser.chompIf (\c -> c == '0')
-                        |= Parser.int
-                    , Parser.int
-                    ]
+                |= intWithLeadingZeroesParser
             , Parser.succeed 0
             ]
         |. Parser.spaces
@@ -300,6 +301,16 @@ timeParser =
             ]
         |. Parser.spaces
         |. Parser.end
+
+
+intWithLeadingZeroesParser : Parser.Parser Int
+intWithLeadingZeroesParser =
+    Parser.oneOf
+        [ Parser.succeed identity
+            |. Parser.chompIf (\c -> c == '0')
+            |= Parser.int
+        , Parser.int
+        ]
 
 
 timeFromParsedComponents : Int -> Int -> Bool -> Time
