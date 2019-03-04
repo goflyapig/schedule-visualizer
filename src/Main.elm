@@ -270,8 +270,7 @@ timeDecoder =
                     D.succeed time
 
                 Err err ->
-                    D.fail
-                        "Invalid time"
+                    D.fail "Invalid time"
     in
     D.string
         |> D.andThen parseTime
